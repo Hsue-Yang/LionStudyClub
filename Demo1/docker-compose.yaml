@@ -4,8 +4,20 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
-    networks:
-      - backend
+    volumes:
+      - D:\User\Fork\StudyClub\LionStudyClub\Grafana_Keycloak\grafana\grafana.ini:/etc/grafana/grafana.ini
+    #environment:
+      #GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      #GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      #GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana-oauth
+      #GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: XpsBA7tB5NNvCqEn0zw2wIvwfRXzna6s
+      #GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://localhost:8080/realms/grafana/protocol/openid-connect/auth
+      #GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://localhost:8080/realms/grafana/protocol/openid-connect/token
+      #GF_AUTH_GENERIC_OAUTH_API_URL: http://localhost:8080/realms/grafana/protocol/openid-connect/userinfo
+      #GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      #GF_AUTH_GENERIC_OAUTH_SCOPES: email profile
+    #networks:
+      #- backend
 
   kafka:
     image: bitnami/kafka:latest
@@ -18,16 +30,16 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-    networks:
-      - backend
+    #networks:
+      #- backend
 
   rabbitmq:
     image: rabbitmq:management
     ports:
       - "5672:5672"
       - "15672:15672"
-    networks:
-      - backend
+    #networks:
+      #- backend
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
@@ -39,34 +51,49 @@ services:
     environment:
       ACCEPT_EULA: Y
       MSSQL_SA_PASSWORD: Password@
-    networks:
-      - backend
+    #networks:
+      #- backend
 
-  postgresql:
-    image: docker.io/bitnami/postgresql:latest
+  postgres:
+    image: postgres:16.2
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - POSTGRESQL_USERNAME=bn_keycloak
-      - POSTGRESQL_DATABASE=bitnami_keycloak
-    networks:
-      - backend
+      POSTGRES_DB: keycloak_db
+      POSTGRES_USER: keycloak_db_user
+      POSTGRES_PASSWORD: keycloak_db_user_password
+    #networks:
+      #- backend
 
   keycloak:
-    image: bitnami/keycloak:latest
+    image: quay.io/keycloak/keycloak:23.0.6
+    command: start
+    environment:
+      KC_HOSTNAME: 172.20.10.2
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres/keycloak_db
+      KC_DB_USERNAME: keycloak_db_user
+      KC_DB_PASSWORD: keycloak_db_user_password
     ports:
-      - "8080:8080"
+      - 8080:8080
+    restart: always
     depends_on:
-      - postgresql
-    networks:
-      - backend
+      - postgres
+    #networks:
+     # - backend
 
   jenkins:
     image: jenkins/jenkins:latest
     ports:
       - "8081:8080"
-    networks:
-      - backend
+    #networks:
+      #- backend
 
-networks:
-  backend:
-    driver: bridge
+#networks:
+  #backend:
+    #driver: bridge
